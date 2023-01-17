@@ -1,7 +1,7 @@
 import { App, Modal } from 'obsidian';
 import { IBooksData } from './IBooksData';
 
-export class SampleModal extends Modal {
+export class NotesWriterModal extends Modal {
 	iBooksData: IBooksData
 	constructor(app: App) {
 		super(app);
@@ -10,7 +10,8 @@ export class SampleModal extends Modal {
 
 	onOpen() {
 		const { contentEl } = this;
-		console.log(this.iBooksData.allBookMeta());
+		console.log(this.iBooksData.allBookMeta().then());
+		console.log(this.iBooksData.allHighlights().then());
 		contentEl.setText('Woah!');
 	}
 

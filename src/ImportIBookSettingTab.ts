@@ -1,4 +1,4 @@
-import { App, DropdownComponent, PluginSettingTab, Setting } from 'obsidian';
+import { App, PluginSettingTab, Setting } from 'obsidian';
 import ImportIBookPlugin from './main';
 
 export class ImportIBookSettingTab extends PluginSettingTab {

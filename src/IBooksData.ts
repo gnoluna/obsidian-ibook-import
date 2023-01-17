@@ -1,7 +1,8 @@
-import { readdir } from "fs/promises"
+import { readdirSync, readFileSync } from "fs"
 import * as path from "path"
 import { env } from "process"
-const Database = require('better-sqlite3');
+//eslint-disable-next-line @typescript-eslint/no-var-requires
+const initSqlJs = require('sql.js');  
 
 type HighlightLocation = {
     chapter: string,
@@ -13,7 +14,7 @@ type Highlight = {
     note: string,
     location: HighlightLocation,
     timestamp: string,
-    id: string,
+    bookId: string,
 }
 
 type BookMeta = {
@@ -21,32 +22,41 @@ type BookMeta = {
     author: string,
     id: string,
 }
+const IBookDocumentDir = `${env.HOME}/Library/Containers/com.apple.iBooksX/Data/Documents/`
 
-const IBookDocumentDir: string = `${env.HOME}/Library/Containers/com.apple.iBooksX/Data/Documents/`
-const libraryMetaDb = new Database(`${IBookDocumentDir}/BKLibrary-1-091020131601.sqlite`, { verbose: console.log, nativeBinding: "node-file/better-sqlite3.node" })
 export class IBooksData {
+    libraryMetaDbFile;
+    annotationDbFile;
 
-    allBookMeta(): BookMeta[] {
-        this.findDbFile(path.join(IBookDocumentDir, "BKLibrary")).then(
-            dbFile => {
-                console.log(dbFile)
-                let stmt = libraryMetaDb.prepare(
-                    // "SELECT ZTITLE as title, ZAUTHOR as author, ZASSETID as id FROM ZBKLIBRARYASSET")
-                    "SELECT * from sqlite_master;")
-                console.log(stmt.get())
-                for (let book in stmt.iterate()) {
-                    console.log(book);
-                }
-            }
-        ).catch(error => {
-            console.error(error);
-            throw error;
-        })
-        return [];
+    constructor() {
+        this.libraryMetaDbFile = this.findDbFile(path.join(IBookDocumentDir, "BKLibrary"));
+        this.annotationDbFile = this.findDbFile(path.join(IBookDocumentDir, "AEAnnotation"));
     }
 
-    async findDbFile(folder: string): Promise<string> {
-        let files = await readdir(folder).then();
-        return path.resolve(folder, files.filter(file => file.endsWith(".sqlite"))[0]);
+    async loadSQL() {
+        return await initSqlJs({ locateFile: (file: string) => `https://sql.js.org/dist/${file}` })
+    }
+
+    async allBookMeta(): Promise<BookMeta[]> {
+        const SQL = await this.loadSQL()
+        const db = new SQL.Database(readFileSync(this.libraryMetaDbFile))
+        return db.exec(
+            "SELECT ZTITLE as title, ZAUTHOR as author, ZASSETID as id FROM ZBKLIBRARYASSET") as BookMeta[]
+
+    }
+
+    async allHighlights(): Promise<Highlight[]> {
+        const SQL = await this.loadSQL()
+        const db = new SQL.Database(readFileSync(this.libraryMetaDbFile))
+        return db.exec(
+            `select ZANNOTATIONASSETID as bookId,
+            ZANNOTATIONSELECTEDTEXT as text,
+            ZANNOTATIONNOTE as note,
+            ZANNOTATIONMODIFICATIONDATE as timestamp
+            from ZAEANNOTATION`) as Highlight[]
+    }
+
+    findDbFile(folder: string): string {
+        return path.join(folder, readdirSync(folder).filter(file => file.endsWith(".sqlite"))[0]);
     }
 }

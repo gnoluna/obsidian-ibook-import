@@ -1,5 +1,5 @@
-import { Editor, MarkdownView, Notice, Plugin } from 'obsidian';
-import { SampleModal } from './SampleModal';
+import { Plugin } from 'obsidian';
+import { NotesWriterModal } from './NotesWriterModal';
 import { ImportIBookSettingTab } from './ImportIBookSettingTab';
 
 interface ImportIBookPluginSettings {
@@ -34,7 +34,7 @@ export default class ImportIBookPlugin extends Plugin {
 			id: 'import-ibook-hightlights',
 			name: 'Import hightlights from iBook',
 			callback: () => {
-				new SampleModal(this.app).open();
+				new NotesWriterModal(this.app).open();
 			}
 		});
 		// This adds an editor command that can perform some operation on the current editor instance
